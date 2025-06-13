@@ -1,0 +1,97 @@
+import os
+import time
+import shutil 
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+login_url = "https://secretaria-eletronica.tst.jus.br/sala-sessao"
+
+# Login com a Variável de Ambiente
+username = os.environ.get('MEU_USUARIO') 
+password = os.environ.get('MINHA_SENHA')
+
+chrome_options = webdriver.ChromeOptions()
+driver = webdriver.Chrome(options=chrome_options)
+driver.maximize_window()
+driver.get(login_url)
+
+try:
+    # --- Login ---
+    username_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "user")))
+    username_input.send_keys(username)
+    
+    password_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "password")))
+    password_input.send_keys(password)
+    
+    login_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "logar")))
+    login_button.click()
+
+    time.sleep(20)
+
+    orgao_button= WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[@id='divMenuAppBar']/header/div/div[3]/div[1]")))
+    orgao_button.click()
+
+
+    orgao_oe= WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[2]/div[3]/div/div/nav/div[1]")))
+    orgao_oe.click() 
+
+    time.sleep(15)
+                                                                   
+    # --- Download ---
+    download_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//div[@id='no-print']/div/div[1]/div/div[1]/div/div[2]/div[7]")))
+    download_button.click()
+
+    time.sleep(5)
+
+except Exception as e: 
+    print(f"Erro: {e}")
+
+
+driver.quit()
+
+# Caminhos para o Drive
+caminho_base = r"C:\Users\e008711\Desktop\Votos\OE"
+pasta_atual = os.path.join(caminho_base, "Atual")
+pasta_antigos = os.path.join(caminho_base, "Antigos")
+pasta_oe = caminho_base
+
+caminho_do_arquivo_baixado = os.path.join(os.path.expanduser("~"), "Downloads")
+
+def processar_arquivos(caminho_arquivo_baixado, pasta_atual, pasta_antigos, pasta_oe):
+# Itera sobre os arquivos no diretório de downloads
+    for nome_arquivo in os.listdir(caminho_arquivo_baixado):
+        if nome_arquivo.startswith("votos_OE"):
+            # Define os caminhos necessários
+            caminho_completo_origem = os.path.join(caminho_arquivo_baixado, nome_arquivo)
+            caminho_destino_atual = os.path.join(pasta_atual, nome_arquivo)
+            caminho_destino_antigos = os.path.join(pasta_antigos, nome_arquivo)
+            caminho_destino_oe = os.path.join(pasta_oe, f"VOTOS OE SESSAO{os.path.splitext(nome_arquivo)[1]}")
+
+            try:
+                # Verifica se o arquivo já existe na pasta atual
+                if os.path.exists(caminho_destino_atual):
+                    # Compara o conteúdo dos arquivos
+                    with open(caminho_completo_origem, 'rb') as f1, open(caminho_destino_atual, 'rb') as f2:
+                        conteudo_igual = f1.read() == f2.read()
+
+                    if not conteudo_igual:
+                        # Move o arquivo atual para a pasta de antigos
+                        shutil.move(caminho_destino_atual, caminho_destino_antigos)
+                        # Move o novo arquivo para a pasta atual
+                        shutil.move(caminho_completo_origem, caminho_destino_atual)
+                        # Cria uma cópia do arquivo atualizado na pasta OE
+                        shutil.copy2(caminho_destino_atual, caminho_destino_oe)
+                    else:
+                        # Remove o arquivo redundante
+                        os.remove(caminho_completo_origem)
+                        print(f"Arquivo redundante removido: {nome_arquivo}")
+                else:
+                    # Caso o arquivo não exista na pasta atual, apenas mova e copie
+                    shutil.move(caminho_completo_origem, caminho_destino_atual)
+                    shutil.copy2(caminho_destino_atual, caminho_destino_oe)
+
+            except Exception as e: 
+                print(f"Erro ao processar o arquivo {nome_arquivo}: {e}")
+
