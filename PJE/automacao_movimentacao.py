@@ -1,8 +1,6 @@
 import os
 import time
 from selenium import webdriver
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -13,7 +11,7 @@ password = os.environ.get('MINHA_SENHA')
 
 try:
     # --- Iniciar o Navegador ---
-    driver = webdriver.Chrome() # options=chrome_options
+    driver = webdriver.Chrome()
     driver.maximize_window()
     driver.get("https://pje.tst.jus.br/tst/login.seam")
    
@@ -41,6 +39,8 @@ try:
 
     orgao_julgador_selecao = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Presidência - Admissibilidade - Secretário']")))
     orgao_julgador_selecao.click()
+
+    print("Órgão Julgador selecionado com sucesso!")
 
     time.sleep(5)
 
@@ -90,13 +90,6 @@ try:
     filter_button3.click()
 
     time.sleep(5)
-
-    scrollable_container = WebDriverWait(driver, 10).until(
-    EC.presence_of_element_located((By.CSS_SELECTOR, "mat-sidenav-content.mat-drawer-content.mat-sidenav-content")))
-
-    driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scrollable_container)
-
-    time.sleep(2)
     
     linhas = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//pje-paginador/div/mat-form-field[2]/div/div/div")))
     linhas.click()
@@ -106,11 +99,9 @@ try:
     linhas_selecao = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//mat-option[contains(.,'100')]")))
     linhas_selecao.click()
 
+    print("Filtros aplicados com sucesso, executando a movimentação...")
+
     time.sleep(5)
-
-    driver.execute_script("arguments[0].scrollTop = 0;", scrollable_container)
-
-    time.sleep(2)
     
     desde = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//pje-data-table/div[1]/table/thead/tr/th[7]/div/div")))
     desde.click()
@@ -128,17 +119,22 @@ try:
     tarefas = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//pje-movimentacao-lote/div/div[1]/div/mat-form-field/div/div[1]/div/mat-select/div/div[1]/span")))
     tarefas.click()
 
+    time.sleep(1)
+
     tarefas_selecao = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//mat-option[contains(.,' Comunicações e expedientes ')]")))
     tarefas_selecao.click()
 
-    driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", scrollable_container)
-   
-    time.sleep(2)
-
+    time.sleep(5)
+    
+    movimentar_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//span[contains(.,'Movimentar processos')]")))
+    movimentar_button.click()
+    
     print("Tarefas movimentadas com sucesso!")
+    
+    time.sleep(10)
 
 except Exception as e:
-    print(f"Erro ao realizar login: {e}")
+    print(f"Erro: {e}")
 
 finally:
     if driver:
