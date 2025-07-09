@@ -11,6 +11,11 @@ from selenium.webdriver.support import expected_conditions as EC
 username = os.environ.get('MEU_USUARIO')
 password = os.environ.get('MINHA_SENHA')
 
+if not username:
+    raise EnvironmentError("A variável de ambiente 'MEU_USUARIO' não está definida.")
+if not password:
+    raise EnvironmentError("A variável de ambiente 'MINHA_SENHA' não está definida.")
+
 # Chrome options
 chrome_options = Options()
 chrome_options.add_argument("--disable-logging")
@@ -104,7 +109,7 @@ try:
         
     # Armazenar o Handle da Janela Original
     original_window = driver.current_window_handle
-    print(f"Original window handle: {original_window}")
+    print(f"Identificador da janela original: {original_window}")
 
     # Processar as Linhas da Tabela de Intimações
     process_rows = WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, "//tr[contains(@class, 'tr-class')]")))
@@ -119,11 +124,11 @@ try:
 
         try:
             print("Começando a processar a linha do processo...")
-            print(f"Processo a linha {i+1} de {len(current_process_rows)}")
+            print(f"Processando a linha {i+1} de {len(current_process_rows)}")
 
             # Click para abrir a linha do processo
-            detales_button = WebDriverWait(row, 10).until(EC.element_to_be_clickable((By.XPATH, ".//button[.//img[@mattooltip='Detalhes do Processo']]")))
-            detales_button.click()
+            detalhes_button = WebDriverWait(row, 10).until(EC.element_to_be_clickable((By.XPATH, ".//button[.//img[@mattooltip='Detalhes do Processo']]")))
+            detalhes_button.click()
 
             # Esperar até que a nova aba seja aberta
             WebDriverWait(driver, 10).until(EC.number_of_windows_to_be(2))
@@ -135,12 +140,12 @@ try:
                     break
 
             if not first_new_tab_handle:
-                print("Error: O primeiro identificador da nova aba não foi encontrado. Indo para a próxima linha.")
+                print("Erro: O primeiro identificador da nova aba não foi encontrado. Indo para a próxima linha.")
                 continue 
             
             # Trocar para a primeira nova aba (Detalhes do Processo)
             driver.switch_to.window(first_new_tab_handle)
-            print(f"Mudou para a primeira nova aba (Detalhes do Processo) com handle: {first_new_tab_handle}")
+            print(f"Mudou para a primeira nova aba (Detalhes do Processo) com identificador: {first_new_tab_handle}")
             
             time.sleep(3) 
 
@@ -159,14 +164,14 @@ try:
                     break
 
             if not second_new_tab_handle:
-                print("Error: Segundo identificador de nova aba não encontrado. Fechando a primeira aba e pulando para a próxima linha.")
+                print("Erro: Segundo identificador de nova aba não encontrado. Fechando a primeira aba e pulando para a próxima linha.")
                 driver.close() 
                 driver.switch_to.window(original_window)
                 continue 
             
             # Trocar para a segunda nova aba 
             driver.switch_to.window(second_new_tab_handle)
-            print(f"Mudou para a segunda nova aba com handle: {second_new_tab_handle}")
+            print(f"Mudou para a segunda nova aba com identificador: {second_new_tab_handle}")
             
             time.sleep(5) 
 
@@ -206,7 +211,7 @@ try:
                     span_decisao_paren = li_element.find_element(By.XPATH, ".//span[text()='(Decisão) ']")                  
                     gavel_icon = li_element.find_element(By.XPATH, ".//i[contains(@class, 'fa-gavel')]")
 
-                    print("Elemento alvo <li> elemento encontrado 'Decisão', '(Decisão)', e 'fa-gavel' icon.")
+                    print("Elemento alvo <li> encontrado: 'Decisão', '(Decisão)' e ícone 'fa-gavel'.")
                     
                     link_to_click = WebDriverWait(li_element, 5).until(
                         EC.element_to_be_clickable((By.XPATH, ".//a[contains(@class, 'tl-documento') and .//span[text()='Decisão'] and .//span[text()='(Decisão) ']]"))
@@ -222,7 +227,7 @@ try:
                     continue
 
             if not found_target_li:
-                print("Nenhum elemento <li> correspondente com 'Decisão', '(Decisão)', e 'fa-gavel' icon foi encontrado.")
+                print("Nenhum elemento <li> correspondente com 'Decisão', '(Decisão)' e ícone 'fa-gavel' foi encontrado.")
 
             importar_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@mattooltip='Importar conteúdo']")))
             importar_button.click()
@@ -281,14 +286,19 @@ try:
 
             try:
                 expedientes_table = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//pje-data-table/div/table/tbody")))
-                print("Encontrada a tabela 'Expedientes'.")
+                print("Tabela 'Expedientes' encontrada.")
 
                 table_rows = expedientes_table.find_elements(By.TAG_NAME, "tr")
-                print(f"Encontradas {len(table_rows)} linhas na tabela 'Expedientes'.")
+                print(f"{len(table_rows)} linhas encontradas na tabela 'Expedientes'.")
 
                 for row_index, row_element in enumerate(table_rows):
                     try:
                         materia_button = row_element.find_element(By.XPATH, ".//mat-select[@placeholder='Matéria Diário Eletrônico']")
+
+                        if not materia_button.is_displayed():
+                            print(f"Matéria Diário Eletrônico não está visível na linha {row_index + 1}. Pulando para a próxima linha.")
+                            continue
+
                         materia_button.click()
 
                         materia_select = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//mat-option[@name='Decisão Monocrática']")))
@@ -363,7 +373,7 @@ try:
             print("Retornar à janela original para a próxima iteração.")       
 
         except Exception as e:
-            print(f"Erro ao processar a linha {i+1} ou novas guias: {e}")
+            print(f"Erro ao processar a linha {i+1} ou novas guias")
             # Fechar as abas abertas em caso de erro
             if second_new_tab_handle and driver.current_window_handle == second_new_tab_handle:
                 driver.close()
@@ -383,7 +393,7 @@ try:
             continue 
 
 except Exception as e:
-    print(f"Ocorreu um erro durante o processo de automação: {e}")
+    print(f"Ocorreu um erro durante o processo de automação")
 
 finally:
     if driver:

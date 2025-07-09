@@ -40,7 +40,7 @@ if not os.path.exists(CHROME_BINARY_PATH):
             sys.exit(1)
 
     except Exception as e:
-        print(f"Erro ao extrair arquivos do Chrome: {e}")
+        print(f"Erro ao extrair arquivos do Chrome")
         sys.exit(1) # Sai do script se não conseguir extrair os arquivos
 else:
     print(f"Arquivos do Chrome já existem em {CHROME_INSTALL_DIR}. Pulando extração.")
@@ -50,13 +50,18 @@ else:
 username = os.environ.get('MEU_USUARIO')
 password = os.environ.get('MINHA_SENHA')
 
+if not username:
+    raise EnvironmentError("A variável de ambiente 'MEU_USUARIO' não está definida.")
+if not password:
+    raise EnvironmentError("A variável de ambiente 'MINHA_SENHA' não está definida.")
+
 # Opções do Chrome
 chrome_options = Options()
 chrome_options.binary_location = CHROME_BINARY_PATH
-chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument("--window-size=2560,1440")
+chrome_options.add_argument("--window-size=1920,1080")
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--log-level=3")
 service = Service(executable_path=CHROME_DRIVER_PATH) 

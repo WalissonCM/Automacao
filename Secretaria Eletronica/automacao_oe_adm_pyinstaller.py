@@ -12,6 +12,11 @@ from selenium.webdriver.support import expected_conditions as EC
 username = os.environ.get('MEU_USUARIO') 
 password = os.environ.get('MINHA_SENHA')
 
+if not username:
+    raise EnvironmentError("A variável de ambiente 'MEU_USUARIO' não está definida.")
+if not password:
+    raise EnvironmentError("A variável de ambiente 'MINHA_SENHA' não está definida.")
+
 # Configuracao dos Arquivos do Chrome
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CHROME_DRIVER_PATH = os.path.join(SCRIPT_DIR, "chromedriver-win64", "chromedriver.exe")
@@ -20,7 +25,7 @@ CHROME_BINARY_PATH = os.path.join(SCRIPT_DIR, "chrome-win64", "chrome.exe")
 # Opções do Chrome
 chrome_options = Options()
 chrome_options.binary_location = CHROME_BINARY_PATH
-chrome_options.add_argument("--headless=new")    
+chrome_options.add_argument("--headless")    
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--window-size=1920,1080")
@@ -81,7 +86,8 @@ try:
     time.sleep(5)
 
 except Exception as e:
-    print(f"Ocorreu um erro durante o teste: {e}")
+    print(f"Ocorreu um erro durante o teste")
+
 finally:
     if driver:
         driver.quit()

@@ -10,6 +10,11 @@ from selenium.webdriver.support import expected_conditions as EC
 username = os.environ.get('MEU_USUARIO') 
 password = os.environ.get('MINHA_SENHA')
 
+if not username:
+    raise EnvironmentError("A variável de ambiente 'MEU_USUARIO' não está definida.")
+if not password:
+    raise EnvironmentError("A variável de ambiente 'MINHA_SENHA' não está definida.")
+
 # Chrome options
 chrome_options = Options()
 chrome_options.add_argument("--disable-logging")
@@ -142,8 +147,9 @@ try:
     time.sleep(10)
 
 except Exception as e:
-    print(f"Erro: {e}")
+    print(f"Ocorreu um erro durante o processo de automação")
 
 finally:
     if driver:
         driver.quit()
+        print("Navegador fechado.")
