@@ -109,7 +109,7 @@ try:
         
     # Armazenar o Handle da Janela Original
     original_window = driver.current_window_handle
-    print(f"Identificador da janela original: {original_window}")
+    #print(f"Identificador da janela original: {original_window}")
 
     # Processar as Linhas da Tabela de Intimações
     process_rows = WebDriverWait(driver, 20).until(EC.presence_of_all_elements_located((By.XPATH, "//tr[contains(@class, 'tr-class')]")))
@@ -145,7 +145,7 @@ try:
             
             # Trocar para a primeira nova aba (Detalhes do Processo)
             driver.switch_to.window(first_new_tab_handle)
-            print(f"Mudou para a primeira nova aba (Detalhes do Processo) com identificador: {first_new_tab_handle}")
+            #print(f"Mudou para a primeira nova aba (Detalhes do Processo) com identificador: {first_new_tab_handle}")
             
             time.sleep(3) 
 
@@ -171,7 +171,7 @@ try:
             
             # Trocar para a segunda nova aba 
             driver.switch_to.window(second_new_tab_handle)
-            print(f"Mudou para a segunda nova aba com identificador: {second_new_tab_handle}")
+            #print(f"Mudou para a segunda nova aba com identificador: {second_new_tab_handle}")
             
             time.sleep(5) 
 
@@ -211,7 +211,7 @@ try:
                     span_decisao_paren = li_element.find_element(By.XPATH, ".//span[text()='(Decisão) ']")                  
                     gavel_icon = li_element.find_element(By.XPATH, ".//i[contains(@class, 'fa-gavel')]")
 
-                    print("Elemento alvo <li> encontrado: 'Decisão', '(Decisão)' e ícone 'fa-gavel'.")
+                    #print("Elemento alvo <li> encontrado: 'Decisão', '(Decisão)' e ícone 'fa-gavel'.")
                     
                     link_to_click = WebDriverWait(li_element, 5).until(
                         EC.element_to_be_clickable((By.XPATH, ".//a[contains(@class, 'tl-documento') and .//span[text()='Decisão'] and .//span[text()='(Decisão) ']]"))
@@ -291,42 +291,70 @@ try:
                 table_rows = expedientes_table.find_elements(By.TAG_NAME, "tr")
                 print(f"{len(table_rows)} linhas encontradas na tabela 'Expedientes'.")
 
-                for row_index, row_element in enumerate(table_rows):
-                    try:
-                        materia_button = row_element.find_element(By.XPATH, ".//mat-select[@placeholder='Matéria Diário Eletrônico']")
+                if len(table_rows) == 20:
+                    print("Exatamente 20 linhas encontradas, pulando processamento e botão salvar.")
 
-                        if not materia_button.is_displayed():
-                            print(f"Matéria Diário Eletrônico não está visível na linha {row_index + 1}. Pulando para a próxima linha.")
+                    try:
+                        # identificar o nome do processo
+                        nome_do_processo = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//pje-descricao-processo/span/a/span")))
+                        nome_do_processo_text = nome_do_processo.text
+                        print(f"Nome do processo: {nome_do_processo_text}")
+
+                        # Caminho para salvar um arquivo de texto 
+                        caminho_downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+                        pasta_processo = os.path.join(caminho_downloads, "Processos")
+                        os.makedirs(pasta_processo, exist_ok=True)
+                        arquivo_processos = os.path.join(pasta_processo, "Processos.txt")
+                        with open(arquivo_processos, "a") as file:
+                            file.write(nome_do_processo_text.strip() + "\n")
+
+                    except Exception as e:
+                        print(f"Erro ao obter o nome do processo")
+
+                else:
+
+                    for row_index, row_element in enumerate(table_rows):
+                        try:
+                            print(f"Processando linha {row_index + 1} da tabela 'Expedientes'...")
+
+                            try:
+                                # Encontrar o botão de matéria Diário Eletrônico
+                                materia_button = row_element.find_element(By.XPATH, ".//mat-select[@placeholder='Matéria Diário Eletrônico']")
+                                driver.execute_script("arguments[0].scrollIntoView();", materia_button)
+                                time.sleep(1)
+                                materia_button.click()
+
+                                materia_select = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//mat-option[@name='Decisão Monocrática']")))
+                                materia_select.click()
+                                time.sleep(1)
+                            
+                            except Exception as row_e:
+                                # Verificar se o ícone de expediente está presente
+                                icone_expediente = row_element.find_element(By.XPATH, ".//i[contains(@class, 'fa fa-times-circle')]")
+                                if icone_expediente:
+                                    print("Ícone de expediente encontrado, pulando linha.")
+                                    continue
+                                
+                        except Exception as row_e:
+                            print(f"Erro ao encontrar Matéria Diário Eletrônico e Ícone de expediente {row_index + 1}: {row_e}")
                             continue
 
-                        materia_button.click()
+                salvar_button2 = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Salva os expedientes']")))
+                salvar_button2.click()
+                print("Salvando expedientes...")
 
-                        materia_select = WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.XPATH, "//mat-option[@name='Decisão Monocrática']")))
-                        materia_select.click()
+                time.sleep(5)        
 
-                        time.sleep(1)
-
-                    except Exception as row_e:
-                        print(f"Matéria Diário Eletrônico não encontrada ou erro na linha {row_index + 1}: {row_e}")
-                        continue 
-
-            except Exception as table_e:
-                print(f"Erro ao localizar ou processar a tabela 'Expedientes': {table_e}")
-
-            salvar_button2 = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Salva os expedientes']")))
-            salvar_button2.click()
-
-            print("Salvando expedientes...")
-
-            time.sleep(5)
+            except Exception as e:
+                print(f"Erro ao processar a tabela 'Expedientes'")
 
             # --- Feche a segunda nova aba ---
             driver.close()
-            print("Segunda aba fechada.")
+            #print("Segunda aba fechada.")
 
             # Voltar para a primeira nova aba (Detalhes do Processo)
             driver.switch_to.window(first_new_tab_handle)
-            print("Voltou para a primeira nova aba.")
+            #print("Voltou para a primeira nova aba.")
 
             time.sleep(5)
 
@@ -366,11 +394,11 @@ try:
 
             # --- Feche a primeira nova aba (Detalhes do Processo) ---
             driver.close() 
-            print("Primeira aba fechada.")
+            #print("Primeira aba fechada.")
 
             # Voltar para a janela original
             driver.switch_to.window(original_window)
-            print("Retornar à janela original para a próxima iteração.")       
+            #print("Retornar à janela original para a próxima iteração.")       
 
         except Exception as e:
             print(f"Erro ao processar a linha {i+1} ou novas guias")
